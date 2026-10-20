@@ -8,6 +8,7 @@ plugins {
 android {
     namespace = "com.echosphere.app"
     compileSdk = 34
+    ndkVersion = "26.1.10909125"
 
     defaultConfig {
         applicationId = "com.echosphere.app"
