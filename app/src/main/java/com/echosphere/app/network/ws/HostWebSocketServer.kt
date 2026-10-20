@@ -10,7 +10,9 @@ import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -46,6 +48,10 @@ class HostWebSocketServer(
         )
     )
     val roomState: StateFlow<RoomState> = _roomState.asStateFlow()
+
+    // Reactive flow of active non-host peer IP addresses for UDP audio unicast
+    private val _activePeerIps = MutableStateFlow<List<String>>(emptyList())
+    val activePeerIps: StateFlow<List<String>> = _activePeerIps.asStateFlow()
 
     private var syncBroadcastJob: Job? = null
 
@@ -86,6 +92,7 @@ class HostWebSocketServer(
                                     connectedPeers = state.connectedPeers.filterNot { it.peerId == peerId }
                                 )
                             }
+                            updateActivePeerIps()
                             broadcastRoomState()
                             Log.i(TAG, "Peer disconnected: $peerId. Total peers: ${connectedSessions.size}")
                         }
@@ -127,11 +134,15 @@ class HostWebSocketServer(
                     JoinPayload("Guest Phone", "Android")
                 }
 
+                // Extract client IP from JoinPayload (fallback to "unknown")
+                val clientIp = joinPayload.clientIp.ifBlank { "unknown" }
+                Log.i(TAG, "Peer $peerId joining with IP: $clientIp")
+
                 val newPeer = PeerInfo(
                     peerId = peerId,
                     displayName = joinPayload.displayName,
                     deviceModel = joinPayload.deviceModel,
-                    ipAddress = "Client",
+                    ipAddress = clientIp,
                     isHost = false
                 )
 
@@ -139,6 +150,7 @@ class HostWebSocketServer(
                     val updatedPeers = state.connectedPeers.filterNot { it.peerId == peerId } + newPeer
                     state.copy(connectedPeers = updatedPeers)
                 }
+                updateActivePeerIps()
 
                 // Send ACK and complete RoomState
                 val ackMsg = WsMessage(
@@ -416,5 +428,17 @@ class HostWebSocketServer(
                 }
             }
         }
+    }
+
+    /**
+     * Update the reactive peer IP list from the current room state.
+     * Filters out the Host and unknown IPs.
+     */
+    private fun updateActivePeerIps() {
+        val peerIps = _roomState.value.connectedPeers
+            .filter { !it.isHost && it.ipAddress != "unknown" && it.ipAddress.isNotBlank() }
+            .map { it.ipAddress }
+        _activePeerIps.value = peerIps
+        Log.i(TAG, "Active peer IPs updated: $peerIps")
     }
 }

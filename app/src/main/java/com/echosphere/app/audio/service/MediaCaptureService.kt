@@ -47,6 +47,12 @@ class MediaCaptureService : Service() {
 
     override fun onBind(intent: Intent?): IBinder = binder
 
+    /**
+     * Expose the active UdpAudioTransport so that MainActivity can register
+     * peer IPs from the HostWebSocketServer's activePeerIps flow.
+     */
+    fun getUdpTransport(): UdpAudioTransport? = udpTransport
+
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()

@@ -53,7 +53,8 @@ data class WsMessage(
 @Serializable
 data class JoinPayload(
     val displayName: String,
-    val deviceModel: String
+    val deviceModel: String,
+    val clientIp: String = ""
 )
 
 @Serializable

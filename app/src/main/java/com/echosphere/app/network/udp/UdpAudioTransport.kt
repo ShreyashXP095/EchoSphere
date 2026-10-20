@@ -49,6 +49,35 @@ class UdpAudioTransport(
     }
 
     /**
+     * Sync the peer target list to match the given list of IPs.
+     * Adds new peers and removes stale ones.
+     */
+    fun syncPeerTargets(currentIps: List<String>) {
+        coroutineScope.launch(Dispatchers.IO) {
+            // Remove peers no longer in the list
+            val currentSet = currentIps.toSet()
+            targetPeerIps.removeAll { it.hostAddress !in currentSet }
+
+            // Add new peers
+            for (ip in currentIps) {
+                try {
+                    val inet = InetAddress.getByName(ip)
+                    if (!targetPeerIps.contains(inet)) {
+                        targetPeerIps.add(inet)
+                        Log.i(TAG, "Synced new peer target: $ip")
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed resolving peer IP $ip during sync", e)
+                }
+            }
+        }
+    }
+
+    fun clearPeers() {
+        targetPeerIps.clear()
+    }
+
+    /**
      * Start UDP Receiver on port 5004 for Client nodes (and Host loopback)
      */
     fun startReceiver() {
@@ -116,16 +145,27 @@ class UdpAudioTransport(
         NativeAudioBridge.nativePushUdpPacket(seq, playAtMasterUs, localPayload)
 
         // 2. Multi-unicast to connected peers over UDP port 5004
-        if (targetPeerIps.isNotEmpty()) {
-            coroutineScope.launch(Dispatchers.IO) {
-                val sock = socket ?: DatagramSocket().also { socket = it }
-                for (peer in targetPeerIps) {
-                    try {
-                        val dgram = DatagramPacket(packetBytes, packetBytes.size, peer, udpPort)
-                        sock.send(dgram)
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Failed unicast to ${peer.hostAddress}", e)
-                    }
+        coroutineScope.launch(Dispatchers.IO) {
+            val sock = socket ?: DatagramSocket().also { socket = it }
+
+            // Send to registered peer IPs
+            for (peer in targetPeerIps) {
+                try {
+                    val dgram = DatagramPacket(packetBytes, packetBytes.size, peer, udpPort)
+                    sock.send(dgram)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed unicast to ${peer.hostAddress}", e)
+                }
+            }
+
+            // Fallback: Also broadcast to standard Android hotspot subnet if no specific peers
+            if (targetPeerIps.isEmpty()) {
+                try {
+                    val broadcastAddr = InetAddress.getByName("192.168.43.255")
+                    val dgram = DatagramPacket(packetBytes, packetBytes.size, broadcastAddr, udpPort)
+                    sock.send(dgram)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Subnet broadcast fallback failed", e)
                 }
             }
         }

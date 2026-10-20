@@ -72,12 +72,13 @@ class ClientWebSocketManager(
                         Log.i(TAG, "Connected to Host WebSocket successfully!")
 
                         // 1. Send JOIN_REQUEST
+                        val localIp = com.echosphere.app.network.NetworkUtils.getLocalIpAddress() ?: ""
                         val joinMsg = WsMessage(
                             action = WsAction.JOIN_REQUEST,
                             senderPeerId = clientPeerId,
                             payloadJson = WsMessage.jsonInstance.encodeToString(
                                 JoinPayload.serializer(),
-                                JoinPayload(displayName, Build.MODEL)
+                                JoinPayload(displayName, Build.MODEL, localIp)
                             )
                         )
                         send(Frame.Text(joinMsg.toJson()))

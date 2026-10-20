@@ -1,6 +1,6 @@
 #include "AudioEngine.h"
-#include <chrono>
 #include <cstring>
+#include <ctime>
 #include <android/log.h>
 
 #define LOG_TAG "EchoSphere-AudioEngine"
@@ -72,8 +72,9 @@ void AudioEngine::setManualCalibrationUs(int64_t manualUs) {
 }
 
 int64_t AudioEngine::getCurrentMasterTimeUs() {
-    auto now = std::chrono::steady_clock::now().time_since_epoch();
-    int64_t localUs = std::chrono::duration_cast<std::chrono::microseconds>(now).count();
+    struct timespec ts;
+    clock_gettime(CLOCK_BOOTTIME, &ts);
+    int64_t localUs = static_cast<int64_t>(ts.tv_sec) * 1000000LL + ts.tv_nsec / 1000LL;
     return localUs + mClockOffsetUs.load() + mManualCalibrationUs.load();
 }
 
