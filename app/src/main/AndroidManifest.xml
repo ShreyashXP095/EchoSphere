@@ -12,26 +12,7 @@
     <!-- QR Code Scanning Permission -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature
-        android:name="android.hardware.camera"
-        android:required="false" />
 
-    <!-- Audio Calibration & Capture Permissions -->
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
-    <application
-        android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.EchoSphere"
-        android:usesCleartextTraffic="true"
         tools:targetApi="34">
 
         <activity
