@@ -46,10 +46,10 @@ fun HomeScreen(
     onJoinRoom: (roomInfo: RoomInfo) -> Unit,
     onRefreshDiscovery: () -> Unit
 ) {
-    var showHostDialog by Remember { mutableStateOf(false) }
-    var showManualIpDialog by Remember { mutableStateOf(false) }
-    var hostRoomName by Remember { mutableStateOf("Echo Sphere Lounge") }
-    var manualIpInput by Remember { mutableStateOf("") }
+    var showHostDialog by remember { mutableStateOf(false) }
+    var showManualIpDialog by remember { mutableStateOf(false) }
+    var hostRoomName by remember { mutableStateOf("Echo Sphere Lounge") }
+    var manualIpInput by remember { mutableStateOf("") }
 
     Scaffold(
         containerColor = BackgroundDark,
